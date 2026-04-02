@@ -13,21 +13,16 @@ $team_posts = get_posts([
 ]);
 
 $founders = [];
-if (!empty($team_posts)) {
-  foreach ($team_posts as $tp) {
-    $founders[] = [
-      'founder_image'   => get_post_thumbnail_url($tp->ID,'large') ?: (get_post_meta($tp->ID,'team_image',true) ?: ''),
-      'founder_name'    => get_post_meta($tp->ID,'team_first_name',true) ?: get_the_title($tp),
-      'founder_surname' => get_post_meta($tp->ID,'team_last_name',true)  ?: '',
-      'founder_origin'  => get_post_meta($tp->ID,'team_origin',true)     ?: '',
-      'founder_role'    => get_post_meta($tp->ID,'team_role',true)        ?: '',
-      'founder_bio'     => get_post_meta($tp->ID,'team_bio',true)         ?: '',
-      'founder_tags'    => get_post_meta($tp->ID,'team_tags',true)        ?: '',
-    ];
-  }
-} else {
-  $founders = sk_repeater('options_sk_founders_json');
-  if (empty($founders)) $founders = sk_default_founders();
+foreach ($team_posts as $tp) {
+  $founders[] = [
+    'founder_image'   => get_post_thumbnail_url($tp->ID,'large') ?: (get_post_meta($tp->ID,'team_image',true) ?: ''),
+    'founder_name'    => get_post_meta($tp->ID,'team_first_name',true) ?: get_the_title($tp),
+    'founder_surname' => get_post_meta($tp->ID,'team_last_name',true)  ?: '',
+    'founder_origin'  => get_post_meta($tp->ID,'team_origin',true)     ?: '',
+    'founder_role'    => get_post_meta($tp->ID,'team_role',true)        ?: '',
+    'founder_bio'     => get_post_meta($tp->ID,'team_bio',true)         ?: '',
+    'founder_tags'    => get_post_meta($tp->ID,'team_tags',true)        ?: '',
+  ];
 }
 
 $section_eyebrow    = sk_option('founders_eyebrow',    'The Founders');
@@ -36,9 +31,15 @@ $section_heading_em = sk_option('founders_heading_em', 'Sacred Kompass');
 $section_sub        = sk_option('founders_sub',        'Two souls, one vision. Uniting Eastern wisdom and Western heart in service of conscious living.');
 
 // Card 1 = group/team photo (left big), Card 2 = Kalai (top right), Card 3 = Christophe (bottom right)
-$team_card  = [ 'label' => __('Our Team','sacred-kompass'), 'image' => sk_option('founders_team_image','') ];
+$team_card  = [
+  'label' => sk_option('founders_team_title', __('Our Team','sacred-kompass')),
+  'subtitle' => sk_option('founders_team_subtitle', __('Sacred Kompass Collective','sacred-kompass')),
+  'bio' => sk_option('founders_team_bio', __('Sacred Kompass brings together guides, teachers, and practitioners united by one vision: to help individuals, leaders, and organisations reconnect with their inner compass.','sacred-kompass')),
+  'image' => sk_option('founders_team_image','')
+];
 $kalai      = $founders[0] ?? ['founder_name'=>'Kalai','founder_surname'=>'Somoo','founder_role'=>'Founder and Lead Guide','founder_bio'=>'','founder_tags'=>'','founder_image'=>'','founder_origin'=>'Singapore'];
 $christophe = $founders[1] ?? ['founder_name'=>'Christophe','founder_surname'=>'Grigri','founder_role'=>'International Coordination & Communication','founder_bio'=>'','founder_tags'=>'','founder_image'=>'','founder_origin'=>'France'];
+$other_members = array_slice($founders, 2);
 
 function sk_render_founder_modal(array $f, string $modal_id): void {
   $name    = esc_html(($f['founder_name'] ?? '') . ' ' . ($f['founder_surname'] ?? ''));
@@ -111,8 +112,8 @@ function sk_render_founder_modal(array $f, string $modal_id): void {
           </div>
         <?php endif; ?>
         <div class="founder-card-name-strip" aria-hidden="true">
-          <div class="founder-strip-name"><?php esc_html_e('Our','sacred-kompass'); ?> <em><?php esc_html_e('Team','sacred-kompass'); ?></em></div>
-          <span class="founder-strip-role"><?php esc_html_e('Sacred Kompass Collective','sacred-kompass'); ?></span>
+          <div class="founder-strip-name"><?php echo esc_html($team_card['label']); ?></div>
+          <span class="founder-strip-role"><?php echo esc_html($team_card['subtitle']); ?></span>
         </div>
         <div class="founder-card-hover-hint" aria-hidden="true">
           <span><?php esc_html_e('View Info','sacred-kompass'); ?> &#8599;</span>
@@ -168,6 +169,14 @@ function sk_render_founder_modal(array $f, string $modal_id): void {
 
       </div>
     </div>
+
+    <?php if (!empty($other_members)) : ?>
+    <div style="margin-top:1.5rem;text-align:right">
+      <button class="btn btn-outline sk-founder-trigger" data-modal="sk-modal-team-list" aria-haspopup="dialog">
+        <?php esc_html_e('View All Team Members','sacred-kompass'); ?>
+      </button>
+    </div>
+    <?php endif; ?>
   </div>
 </section>
 
@@ -185,9 +194,9 @@ function sk_render_founder_modal(array $f, string $modal_id): void {
         </div>
       <?php endif; ?>
       <div class="sk-founder-modal-content">
-        <h3 class="sk-founder-modal-name"><?php esc_html_e('Sacred Kompass','sacred-kompass'); ?> <em><?php esc_html_e('Collective','sacred-kompass'); ?></em></h3>
-        <span class="sk-founder-modal-role"><?php esc_html_e('A Community of Conscious Practice','sacred-kompass'); ?></span>
-        <p class="sk-founder-modal-bio"><?php esc_html_e('Sacred Kompass brings together guides, teachers, and practitioners united by one vision: to help individuals, leaders, and organisations reconnect with their inner compass. Through ancient wisdom and modern frameworks, we walk with you toward lasting transformation.','sacred-kompass'); ?></p>
+        <h3 class="sk-founder-modal-name"><?php echo esc_html($team_card['label']); ?></h3>
+        <span class="sk-founder-modal-role"><?php echo esc_html($team_card['subtitle']); ?></span>
+        <p class="sk-founder-modal-bio"><?php echo esc_html($team_card['bio']); ?></p>
         <a href="<?php echo esc_url(home_url('/#contact')); ?>" class="btn btn-primary sk-founder-modal-cta" style="margin-top:1.8rem">
           <?php esc_html_e('Book a Discovery Call','sacred-kompass'); ?>
         </a>
@@ -198,3 +207,30 @@ function sk_render_founder_modal(array $f, string $modal_id): void {
 
 <?php sk_render_founder_modal($kalai,      'sk-modal-kalai'); ?>
 <?php sk_render_founder_modal($christophe, 'sk-modal-christophe'); ?>
+<?php if (!empty($other_members)): ?>
+<div class="sk-founder-modal" id="sk-modal-team-list" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e('All Team Members','sacred-kompass'); ?>" hidden>
+  <div class="sk-founder-modal-backdrop"></div>
+  <div class="sk-founder-modal-box">
+    <button class="sk-founder-modal-close" aria-label="<?php esc_attr_e('Close','sacred-kompass'); ?>">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="sk-founder-modal-inner" style="display:block;padding:2rem 2rem 1rem">
+      <h3 class="sk-founder-modal-name" style="margin-bottom:1.4rem"><?php esc_html_e('All Team Members','sacred-kompass'); ?></h3>
+      <?php foreach ($other_members as $m): ?>
+        <article style="display:grid;grid-template-columns:84px 1fr;gap:1rem;align-items:start;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid rgba(0,0,0,.08)">
+          <div>
+            <?php if (!empty($m['founder_image'])): ?>
+              <img src="<?php echo esc_url($m['founder_image']); ?>" alt="<?php echo esc_attr(trim(($m['founder_name'] ?? '').' '.($m['founder_surname'] ?? ''))); ?>" style="width:84px;height:104px;object-fit:cover;border-radius:10px" />
+            <?php endif; ?>
+          </div>
+          <div>
+            <h4 style="margin:0 0 .2rem"><?php echo esc_html(trim(($m['founder_name'] ?? '').' '.($m['founder_surname'] ?? ''))); ?></h4>
+            <?php if (!empty($m['founder_role'])): ?><p style="margin:0 0 .4rem;color:#8c6b2f"><?php echo esc_html($m['founder_role']); ?></p><?php endif; ?>
+            <?php if (!empty($m['founder_bio'])): ?><p style="margin:0;color:#555;line-height:1.6"><?php echo esc_html($m['founder_bio']); ?></p><?php endif; ?>
+          </div>
+        </article>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>

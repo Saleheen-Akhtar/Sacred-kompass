@@ -19,11 +19,12 @@ $pillar_images = [
 
 $pillars_js = [];
 foreach ($pillars as $i => $p) {
+    $custom_img = !empty($p['pillar_image']) ? esc_url_raw($p['pillar_image']) : '';
     $pillars_js[] = [
         'num'   => $p['pillar_num']   ?? '0'.($i+1),
         'title' => $p['pillar_title'] ?? '',
         'desc'  => $p['pillar_desc']  ?? '',
-        'src'   => $pillar_images[$i % count($pillar_images)],
+        'src'   => $custom_img ?: $pillar_images[$i % count($pillar_images)],
     ];
 }
 ?>
