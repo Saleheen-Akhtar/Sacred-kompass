@@ -300,6 +300,12 @@ $gallery_images = array_values($gallery_images);
   /* ── Gallery config (finite cinematic track) ── */
   var images       = GALLERY_IMAGES;
   var totalImages  = images.length;
+  if (!totalImages) {
+    document.getElementById('sk-three-mount').style.display='none';
+    document.getElementById('sk-gallery-fallback').style.display='';
+    if (hint) hint.style.display='none';
+    return;
+  }
   var itemSpacing  = 7.0;
   var leadOffset   = 2.1;
   var scrollPos    = 0;
@@ -393,10 +399,16 @@ $gallery_images = array_values($gallery_images);
   mountEl.addEventListener('touchstart', function(e){ touchStartY = e.touches[0].clientY; }, {passive:true});
   mountEl.addEventListener('touchmove',  function(e){
     var dy = touchStartY - e.touches[0].clientY;
+    var tryingDown = dy > 0;
+    var tryingUp = dy < 0;
+    var atEnd = scrollPos >= maxScrollPos - 0.02;
+    var atStart = scrollPos <= 0.02;
+    if ((tryingDown && atEnd) || (tryingUp && atStart)) return;
+    e.preventDefault();
     scrollVelocity += dy * 0.008;
     touchStartY = e.touches[0].clientY;
     autoPlay = false; lastInteract = Date.now();
-  }, {passive:true});
+  }, {passive:false});
 
   /* ── Raycaster for hover/click on offering planes ── */
   var raycaster = new THREE.Raycaster();

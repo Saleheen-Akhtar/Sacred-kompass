@@ -23,6 +23,13 @@ foreach ($team_posts as $tp) {
     'founder_bio'     => get_post_meta($tp->ID,'team_bio',true)         ?: '',
     'founder_tags'    => get_post_meta($tp->ID,'team_tags',true)        ?: '',
   ];
+<<<<<<< codex/fix-acf-settings-and-section-issues-jm4yx2
+}
+if (empty($founders)) {
+  $founders = sk_repeater('options_sk_founders_json');
+  if (empty($founders)) $founders = sk_default_founders();
+=======
+>>>>>>> main
 }
 
 $section_eyebrow    = sk_option('founders_eyebrow',    'The Founders');
@@ -216,7 +223,11 @@ function sk_render_founder_modal(array $f, string $modal_id): void {
     </button>
     <div class="sk-founder-modal-inner" style="display:block;padding:2rem 2rem 1rem">
       <h3 class="sk-founder-modal-name" style="margin-bottom:1.4rem"><?php esc_html_e('All Team Members','sacred-kompass'); ?></h3>
+<<<<<<< codex/fix-acf-settings-and-section-issues-jm4yx2
+      <?php foreach ($founders as $m): ?>
+=======
       <?php foreach ($other_members as $m): ?>
+>>>>>>> main
         <article style="display:grid;grid-template-columns:84px 1fr;gap:1rem;align-items:start;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid rgba(0,0,0,.08)">
           <div>
             <?php if (!empty($m['founder_image'])): ?>
