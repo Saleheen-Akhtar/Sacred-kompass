@@ -94,6 +94,9 @@ $gallery_images = array_values($gallery_images);
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14 4L4 14M4 4L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
       <div class="offerings-drawer__inner">
+        <div class="offerings-drawer__media" id="sk-drawer-media" style="display:none">
+          <img id="sk-drawer-img" src="" alt="" />
+        </div>
         <span class="offerings-drawer__num"  id="sk-drawer-num"></span>
         <span class="offerings-drawer__tag"  id="sk-drawer-tag"></span>
         <h3  class="offerings-drawer__title" id="sk-drawer-title"></h3>
@@ -119,6 +122,11 @@ $gallery_images = array_values($gallery_images);
 
     <div class="offerings-gallery-hint" id="sk-gallery-hint">
       <span><?php esc_html_e('Scroll to explore · Click an offering to discover','sacred-kompass'); ?></span>
+    </div>
+    <div class="offerings-end-cta" id="sk-offerings-end-cta" aria-hidden="true">
+      <a href="<?php echo esc_url(home_url('/#contact')); ?>" class="btn btn-primary">
+        <?php esc_html_e('Book a Free Discovery Call','sacred-kompass'); ?>
+      </a>
     </div>
   </div>
 
@@ -149,6 +157,8 @@ $gallery_images = array_values($gallery_images);
   function openDrawer(idx) {
     var o = OFFERINGS[idx];
     if (!o) return;
+    var mediaEl = document.getElementById('sk-drawer-media');
+    var imgEl = document.getElementById('sk-drawer-img');
     document.getElementById('sk-drawer-num').textContent   = o.num   || '';
     document.getElementById('sk-drawer-tag').textContent   = o.tag   || '';
     document.getElementById('sk-drawer-tag').style.display = o.tag ? '' : 'none';
@@ -157,6 +167,15 @@ $gallery_images = array_values($gallery_images);
     var priceEl = document.getElementById('sk-drawer-price');
     priceEl.textContent   = o.price || '';
     priceEl.style.display = o.price ? '' : 'none';
+    if (imgEl && mediaEl) {
+      if (o.img) {
+        imgEl.src = o.img;
+        imgEl.alt = o.title || '';
+        mediaEl.style.display = '';
+      } else {
+        mediaEl.style.display = 'none';
+      }
+    }
     document.getElementById('sk-drawer-link').href = o.link || '#contact';
     document.querySelectorAll('.offerings-drawer__list-item').forEach(function(b){
       b.classList.toggle('is-active', parseInt(b.dataset.offeringIndex,10) === idx);
@@ -278,27 +297,34 @@ $gallery_images = array_values($gallery_images);
     });
   }
 
-  /* ── Gallery config (matches original defaults) ── */
+  /* ── Gallery config (finite cinematic track) ── */
   var images       = GALLERY_IMAGES;
   var totalImages  = images.length;
-  var visibleCount = Math.min(12, totalImages);
-  var depthRange   = 50;
-  var zSpacing     = depthRange / Math.max(visibleCount, 1);
+  if (!totalImages) {
+    document.getElementById('sk-three-mount').style.display='none';
+    document.getElementById('sk-gallery-fallback').style.display='';
+    if (hint) hint.style.display='none';
+    return;
+  }
+  var itemSpacing  = 7.0;
+  var leadOffset   = 2.1;
+  var scrollPos    = 0;
+  var maxScrollPos = Math.max(totalImages - 1, 0) + 1.25; // last stretch reserved for CTA reveal
 
   var fadeIn  = { start: 0.05, end: 0.25 };
-  var fadeOut = { start: 0.40, end: 0.43 };
+  var fadeOut = { start: 0.66, end: 0.86 };
   var blurIn  = { start: 0.00, end: 0.10 };
-  var blurOut = { start: 0.40, end: 0.43 };
+  var blurOut = { start: 0.66, end: 0.86 };
   var maxBlur = 8.0;
 
-  // Spatial offsets — golden angle distribution (same as original)
-  var MAX_H = 8, MAX_V = 8;
+  // Spatial offsets — golden angle distribution
+  var MAX_H = 7.4, MAX_V = 6.8;
   var spatialX = [], spatialY = [];
-  for (var si = 0; si < visibleCount; si++) {
+  for (var si = 0; si < totalImages; si++) {
     var ha = (si * 2.618) % (Math.PI * 2);
     var va = (si * 1.618 + Math.PI / 3) % (Math.PI * 2);
-    var hr = (si % 3) * 1.2;
-    var vr = ((si + 1) % 4) * 0.8;
+    var hr = (si % 3) * 1.08;
+    var vr = ((si + 1) % 4) * 0.72;
     spatialX.push(Math.sin(ha) * hr * MAX_H / 3);
     spatialY.push(Math.cos(va) * vr * MAX_V / 4);
   }
@@ -326,15 +352,14 @@ $gallery_images = array_values($gallery_images);
 
   var geo = new THREE.PlaneGeometry(1, 1, 32, 32);
 
-  for (var pi = 0; pi < visibleCount; pi++) {
+  for (var pi = 0; pi < totalImages; pi++) {
     var mat  = createClothMaterial();
     var mesh = new THREE.Mesh(geo, mat);
     scene.add(mesh);
     materials.push(mat);
     meshes.push(mesh);
     planeData.push({
-      z:          (zSpacing * pi) % depthRange,
-      imageIndex: pi % totalImages,
+      imageIndex: pi,
       x:          spatialX[pi],
       y:          spatialY[pi],
     });
@@ -345,12 +370,18 @@ $gallery_images = array_values($gallery_images);
   var autoPlay       = true;
   var lastInteract   = Date.now();
   var hoveredIndex   = -1; // plane index (not offering index)
+  var endCta = document.getElementById('sk-offerings-end-cta');
 
   var mountEl = mount;
 
   mountEl.addEventListener('wheel', function(e){
+    var tryingDown = e.deltaY > 0;
+    var tryingUp = e.deltaY < 0;
+    var atEnd = scrollPos >= maxScrollPos - 0.02;
+    var atStart = scrollPos <= 0.02;
+    if ((tryingDown && atEnd) || (tryingUp && atStart)) return; // allow normal page scroll
     e.preventDefault();
-    scrollVelocity += e.deltaY * 0.01;
+    scrollVelocity += e.deltaY * 0.012;
     autoPlay = false;
     lastInteract = Date.now();
     if (hint) hint.classList.add('is-hidden');
@@ -368,10 +399,16 @@ $gallery_images = array_values($gallery_images);
   mountEl.addEventListener('touchstart', function(e){ touchStartY = e.touches[0].clientY; }, {passive:true});
   mountEl.addEventListener('touchmove',  function(e){
     var dy = touchStartY - e.touches[0].clientY;
+    var tryingDown = dy > 0;
+    var tryingUp = dy < 0;
+    var atEnd = scrollPos >= maxScrollPos - 0.02;
+    var atStart = scrollPos <= 0.02;
+    if ((tryingDown && atEnd) || (tryingUp && atStart)) return;
+    e.preventDefault();
     scrollVelocity += dy * 0.008;
     touchStartY = e.touches[0].clientY;
     autoPlay = false; lastInteract = Date.now();
-  }, {passive:true});
+  }, {passive:false});
 
   /* ── Raycaster for hover/click on offering planes ── */
   var raycaster = new THREE.Raycaster();
@@ -416,7 +453,6 @@ $gallery_images = array_values($gallery_images);
 
   /* ── Animate ── */
   var clock = new THREE.Clock();
-  var imageAdvance = visibleCount % totalImages || totalImages;
 
   function animate() {
     requestAnimationFrame(animate);
@@ -425,34 +461,18 @@ $gallery_images = array_values($gallery_images);
 
     // Auto-play resume
     if (Date.now() - lastInteract > 3000) autoPlay = true;
-    if (autoPlay) scrollVelocity += 0.3 * delta;
+    if (autoPlay && scrollPos < maxScrollPos - 0.06) scrollVelocity += 0.28 * delta;
 
     // Damping
-    scrollVelocity *= 0.95;
-
-    var half = depthRange / 2;
+    scrollVelocity *= 0.92;
+    scrollPos += scrollVelocity * delta * 7.2;
+    if (scrollPos < 0) { scrollPos = 0; scrollVelocity = 0; }
+    if (scrollPos > maxScrollPos) { scrollPos = maxScrollPos; scrollVelocity = 0; }
 
     planeData.forEach(function(p, i) {
-      var newZ = p.z + scrollVelocity * delta * 10;
-      var wrapsF = 0, wrapsB = 0;
-
-      if (newZ >= depthRange) {
-        wrapsF = Math.floor(newZ / depthRange);
-        newZ  -= depthRange * wrapsF;
-      } else if (newZ < 0) {
-        wrapsB = Math.ceil(-newZ / depthRange);
-        newZ  += depthRange * wrapsB;
-      }
-
-      if (wrapsF > 0) p.imageIndex = (p.imageIndex + wrapsF * imageAdvance) % totalImages;
-      if (wrapsB > 0) {
-        var s = p.imageIndex - wrapsB * imageAdvance;
-        p.imageIndex = ((s % totalImages) + totalImages) % totalImages;
-      }
-      p.z = ((newZ % depthRange) + depthRange) % depthRange;
-
-      var worldZ  = p.z - half;
-      var normPos = p.z / depthRange;
+      var rel = i - scrollPos;
+      var worldZ = -((rel + leadOffset) * itemSpacing);
+      var normPos = Math.max(0, Math.min(1, ((worldZ + 40) / 80)));
 
       // Opacity (matches original fadeSettings)
       var opacity = 1;
@@ -478,7 +498,7 @@ $gallery_images = array_values($gallery_images);
       mat.uniforms.isHovered.value   = (hoveredIndex === i) ? 1.0 : 0.0;
 
       // Set texture
-      var imgSrc = images[p.imageIndex].src;
+      var imgSrc = images[p.imageIndex] ? images[p.imageIndex].src : '';
       if (texCache[imgSrc]) {
         mat.uniforms.map.value = texCache[imgSrc];
         // Scale to maintain aspect ratio
@@ -493,6 +513,13 @@ $gallery_images = array_values($gallery_images);
 
       meshes[i].position.set(p.x, p.y, worldZ);
     });
+
+    if (endCta) {
+      var endProgress = Math.max(0, Math.min(1, (scrollPos - (maxScrollPos - 0.9)) / 0.9));
+      endCta.style.opacity = String(endProgress);
+      endCta.style.transform = 'translate(-50%,' + (20 - endProgress * 20) + 'px)';
+      endCta.setAttribute('aria-hidden', endProgress < 0.35 ? 'true' : 'false');
+    }
 
     renderer.render(scene, camera);
   }
