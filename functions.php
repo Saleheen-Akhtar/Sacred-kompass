@@ -60,6 +60,7 @@ function sk_settings_page(): void {
             'sk_about_eyebrow','sk_about_heading','sk_about_body','sk_about_quote','sk_about_quote_attr','sk_about_traditions',
             'sk_quote_eyebrow','sk_quote_text','sk_quote_highlight','sk_quote_attr',
             'sk_founders_eyebrow','sk_founders_heading','sk_founders_heading_em','sk_founders_sub',
+            'sk_founders_team_image','sk_founders_team_title','sk_founders_team_subtitle','sk_founders_team_bio',
             'sk_cta_eyebrow','sk_cta_sub','sk_forminator_form_id',
             'sk_footer_email','sk_footer_phone','sk_footer_tagline','sk_footer_copyright',
             'sk_social_instagram','sk_social_facebook','sk_social_whatsapp',
@@ -77,27 +78,11 @@ function sk_settings_page(): void {
                     'pillar_num'   => sanitize_text_field($num),
                     'pillar_title' => sanitize_text_field($_POST['pillar_title'][$i] ?? ''),
                     'pillar_desc'  => sanitize_textarea_field($_POST['pillar_desc'][$i] ?? ''),
+                    'pillar_image' => esc_url_raw($_POST['pillar_image'][$i] ?? ''),
                 ];
             }
         }
         update_option('options_sk_philosophy_pillars_json', wp_json_encode($pillars), false);
-
-        /* Founders */
-        $founders = [];
-        if (!empty($_POST['founder_name']) && is_array($_POST['founder_name'])) {
-            foreach ($_POST['founder_name'] as $i => $name) {
-                $founders[] = [
-                    'founder_image'   => sanitize_text_field($_POST['founder_image'][$i] ?? ''),
-                    'founder_name'    => sanitize_text_field($name),
-                    'founder_surname' => sanitize_text_field($_POST['founder_surname'][$i] ?? ''),
-                    'founder_origin'  => sanitize_text_field($_POST['founder_origin'][$i] ?? ''),
-                    'founder_role'    => sanitize_text_field($_POST['founder_role'][$i] ?? ''),
-                    'founder_bio'     => sanitize_textarea_field($_POST['founder_bio'][$i] ?? ''),
-                    'founder_tags'    => sanitize_textarea_field($_POST['founder_tags'][$i] ?? ''),
-                ];
-            }
-        }
-        update_option('options_sk_founders_json', wp_json_encode($founders), false);
 
         /* Values */
         $values = [];
@@ -123,11 +108,9 @@ function sk_settings_page(): void {
     };
 
     $pillars  = sk_repeater('options_sk_philosophy_pillars_json');
-    $founders = sk_repeater('options_sk_founders_json');
     $values   = sk_repeater('options_sk_values_json');
 
     if (empty($pillars))  $pillars  = sk_default_pillars();
-    if (empty($founders)) $founders = sk_default_founders();
     if (empty($values))   $values   = sk_default_values();
 
     ?>
@@ -240,6 +223,7 @@ function sk_settings_page(): void {
         <?php sk_sub_row('No.','pillar_num[]',esc_attr($p['pillar_num']??'')); ?>
         <?php sk_sub_row('Title','pillar_title[]',esc_attr($p['pillar_title']??'')); ?>
         <?php sk_sub_row_ta('Description','pillar_desc[]',esc_textarea($p['pillar_desc']??''),2); ?>
+        <?php sk_sub_row('Image URL','pillar_image[]',esc_attr($p['pillar_image']??'')); ?>
     </div>
     <?php endforeach; ?>
     </div>
@@ -262,29 +246,11 @@ function sk_settings_page(): void {
     <?php sk_row('Section Heading','sk_founders_heading',$o('sk_founders_heading','The Guides Behind')); ?>
     <?php sk_row('Heading (italic part)','sk_founders_heading_em',$o('sk_founders_heading_em','Sacred Kompass')); ?>
     <?php sk_row_ta('Section Sub-text','sk_founders_sub',$t('sk_founders_sub'),2); ?>
-    <div id="founders-wrap">
-    <?php foreach ($founders as $fi => $f): ?>
-    <div class="sk-rep-row" data-type="founder">
-        <h4>Founder <?php echo $fi+1; ?></h4>
-        <button type="button" class="sk-btn-del" onclick="this.closest('.sk-rep-row').remove()">Remove</button>
-        <div class="sk-row">
-            <label>Portrait Photo URL</label>
-            <div>
-                <input type="text" name="founder_image[]" value="<?php echo esc_attr($f['founder_image']??''); ?>" placeholder="https://... (paste URL from Media Library)" style="width:100%;box-sizing:border-box" />
-                <?php if (!empty($f['founder_image'])): ?><img src="<?php echo esc_url($f['founder_image']); ?>" class="sk-img-preview" /><?php endif; ?>
-                <p class="sk-hint">Upload via <a href="<?php echo admin_url('media-new.php'); ?>" target="_blank">Media → Add New</a>, then copy the file URL here. Min 520×700px portrait.</p>
-            </div>
-        </div>
-        <?php sk_sub_row('First Name','founder_name[]',esc_attr($f['founder_name']??'')); ?>
-        <?php sk_sub_row('Last Name','founder_surname[]',esc_attr($f['founder_surname']??'')); ?>
-        <?php sk_sub_row('Origin / Country','founder_origin[]',esc_attr($f['founder_origin']??'')); ?>
-        <?php sk_sub_row('Role / Title','founder_role[]',esc_attr($f['founder_role']??'')); ?>
-        <?php sk_sub_row_ta('Bio','founder_bio[]',esc_textarea($f['founder_bio']??''),4); ?>
-        <?php sk_sub_row_ta('Expertise Tags (one per line)','founder_tags[]',esc_textarea($f['founder_tags']??''),3); ?>
-    </div>
-    <?php endforeach; ?>
-    </div>
-    <button type="button" class="sk-btn-add" onclick="skAdd('founder','founders-wrap')">+ Add Founder</button>
+    <?php sk_row('Our Team Card Image URL','sk_founders_team_image',$o('sk_founders_team_image'),'Large left card image.'); ?>
+    <?php sk_row('Our Team Card Title','sk_founders_team_title',$o('sk_founders_team_title','Our Team')); ?>
+    <?php sk_row('Our Team Card Subtitle','sk_founders_team_subtitle',$o('sk_founders_team_subtitle','Sacred Kompass Collective')); ?>
+    <?php sk_row_ta('Our Team Modal Bio','sk_founders_team_bio',$t('sk_founders_team_bio','Sacred Kompass brings together guides, teachers, and practitioners united by one vision: to help individuals, leaders, and organisations reconnect with their inner compass.'),4); ?>
+    <p class="sk-hint">Team members are now managed only in <strong>★ Sacred Kompass → Team Members</strong>.</p>
     </div>
 
     <!-- CORE VALUES -->
@@ -331,8 +297,7 @@ function sk_settings_page(): void {
 
     <script>
     const skT = {
-        pillar:`<div class="sk-rep-row" data-type="pillar"><h4>Pillar</h4><button type="button" class="sk-btn-del" onclick="this.closest('.sk-rep-row').remove()">Remove</button><div class="sk-row"><label>No.</label><input type="text" name="pillar_num[]" value="" /></div><div class="sk-row"><label>Title</label><input type="text" name="pillar_title[]" value="" /></div><div class="sk-row"><label>Description</label><textarea name="pillar_desc[]" rows="2" style="width:100%;box-sizing:border-box"></textarea></div></div>`,
-        founder:`<div class="sk-rep-row" data-type="founder"><h4>Founder</h4><button type="button" class="sk-btn-del" onclick="this.closest('.sk-rep-row').remove()">Remove</button><div class="sk-row"><label>Portrait Photo URL</label><div><input type="text" name="founder_image[]" value="" placeholder="https://..." style="width:100%;box-sizing:border-box"/><p class="sk-hint">Upload via Media Library, copy file URL here.</p></div></div><div class="sk-row"><label>First Name</label><input type="text" name="founder_name[]" value="" /></div><div class="sk-row"><label>Last Name</label><input type="text" name="founder_surname[]" value="" /></div><div class="sk-row"><label>Origin / Country</label><input type="text" name="founder_origin[]" value="" /></div><div class="sk-row"><label>Role / Title</label><input type="text" name="founder_role[]" value="" /></div><div class="sk-row"><label>Bio</label><textarea name="founder_bio[]" rows="4" style="width:100%;box-sizing:border-box"></textarea></div><div class="sk-row"><label>Expertise Tags</label><textarea name="founder_tags[]" rows="3" style="width:100%;box-sizing:border-box"></textarea></div></div>`,
+        pillar:`<div class="sk-rep-row" data-type="pillar"><h4>Pillar</h4><button type="button" class="sk-btn-del" onclick="this.closest('.sk-rep-row').remove()">Remove</button><div class="sk-row"><label>No.</label><input type="text" name="pillar_num[]" value="" /></div><div class="sk-row"><label>Title</label><input type="text" name="pillar_title[]" value="" /></div><div class="sk-row"><label>Description</label><textarea name="pillar_desc[]" rows="2" style="width:100%;box-sizing:border-box"></textarea></div><div class="sk-row"><label>Image URL</label><input type="text" name="pillar_image[]" value="" placeholder="https://..." /></div></div>`,
         value:`<div class="sk-rep-row" data-type="value"><h4>Value</h4><button type="button" class="sk-btn-del" onclick="this.closest('.sk-rep-row').remove()">Remove</button><div class="sk-row"><label>Title</label><input type="text" name="value_title[]" value="" /></div><div class="sk-row"><label>Description</label><textarea name="value_desc[]" rows="3" style="width:100%;box-sizing:border-box"></textarea></div></div>`
     };
     function skAdd(type,wrapId){
@@ -414,6 +379,10 @@ function sk_acf_defaults(): array {
         'sk_founders_heading'    => 'The Guides Behind',
         'sk_founders_heading_em' => 'Sacred Kompass',
         'sk_founders_sub'        => 'Two souls, one vision. Uniting Eastern wisdom and Western heart in service of conscious living.',
+        'sk_founders_team_image' => '',
+        'sk_founders_team_title' => 'Our Team',
+        'sk_founders_team_subtitle' => 'Sacred Kompass Collective',
+        'sk_founders_team_bio'   => 'Sacred Kompass brings together guides, teachers, and practitioners united by one vision: to help individuals, leaders, and organisations reconnect with their inner compass.',
         'sk_cta_eyebrow'         => 'Begin Your Journey',
         'sk_cta_sub'             => 'A unique fusion of sacred traditions and practical application. Not temporary fixes, but in-depth transformation that helps you thrive from the inside out.',
         'sk_forminator_form_id'  => '',
@@ -428,11 +397,11 @@ function sk_acf_defaults(): array {
 }
 function sk_default_pillars(): array {
     return [
-        ['pillar_num'=>'01','pillar_title'=>'Ancient Wisdom',         'pillar_desc'=>'Rooted in the deep soil of Vedic philosophy and centuries of sacred contemplative tradition — we offer not a system to follow, but a living river to return to.'],
-        ['pillar_num'=>'02','pillar_title'=>'Compassionate Practice', 'pillar_desc'=>'Nonviolent Communication and emotional resilience woven into the fabric of how we meet the world — not as techniques, but as a way of being that transforms every conversation, every relationship, every moment of conflict into an opening.'],
-        ['pillar_num'=>'03','pillar_title'=>'Inner Stillness',        'pillar_desc'=>'Meditation, breathwork, and the art of presence — practices that do not silence the noise of life, but teach you to rest so deeply within yourself that the noise loses its grip.'],
-        ['pillar_num'=>'04','pillar_title'=>'Jyotish Astrology',      'pillar_desc'=>'The luminous science of light and time — Jyotish astrology as a sacred map of your soul\'s journey, offering clarity on your dharma, your gifts, and the seasons of transformation already written in the stars.'],
-        ['pillar_num'=>'05','pillar_title'=>'Sacred Feminine',        'pillar_desc'=>'Honouring the intelligence of the feminine — cyclical, intuitive, embodied. A remembering of what has been suppressed, and a reclaiming of wholeness for every woman, every leader, every soul willing to bow to the deeper wisdom within.'],
+        ['pillar_num'=>'01','pillar_title'=>'Ancient Wisdom',         'pillar_desc'=>'Rooted in the deep soil of Vedic philosophy and centuries of sacred contemplative tradition — we offer not a system to follow, but a living river to return to.','pillar_image'=>''],
+        ['pillar_num'=>'02','pillar_title'=>'Compassionate Practice', 'pillar_desc'=>'Nonviolent Communication and emotional resilience woven into the fabric of how we meet the world — not as techniques, but as a way of being that transforms every conversation, every relationship, every moment of conflict into an opening.','pillar_image'=>''],
+        ['pillar_num'=>'03','pillar_title'=>'Inner Stillness',        'pillar_desc'=>'Meditation, breathwork, and the art of presence — practices that do not silence the noise of life, but teach you to rest so deeply within yourself that the noise loses its grip.','pillar_image'=>''],
+        ['pillar_num'=>'04','pillar_title'=>'Jyotish Astrology',      'pillar_desc'=>'The luminous science of light and time — Jyotish astrology as a sacred map of your soul\'s journey, offering clarity on your dharma, your gifts, and the seasons of transformation already written in the stars.','pillar_image'=>''],
+        ['pillar_num'=>'05','pillar_title'=>'Sacred Feminine',        'pillar_desc'=>'Honouring the intelligence of the feminine — cyclical, intuitive, embodied. A remembering of what has been suppressed, and a reclaiming of wholeness for every woman, every leader, every soul willing to bow to the deeper wisdom within.','pillar_image'=>''],
     ];
 }
 function sk_default_founders(): array {
@@ -489,25 +458,36 @@ function sk_auto_setup(): void {
 add_action('admin_init', 'sk_maybe_reseed');
 function sk_maybe_reseed(): void {
     if (empty($_GET['sk_reseed']) || !current_user_can('manage_options')) return;
+    $full_reset = !empty($_GET['sk_full']);
 
-    delete_option('sk_setup_done_v53');
-    delete_option('sk_setup_done_v52');
-    delete_option('options_sk_philosophy_pillars_json');
-    delete_option('options_sk_founders_json');
-    delete_option('options_sk_values_json');
+    if ($full_reset) {
+        delete_option('sk_setup_done_v53');
+        delete_option('sk_setup_done_v52');
+        delete_option('options_sk_philosophy_pillars_json');
+        delete_option('options_sk_founders_json');
+        delete_option('options_sk_values_json');
+    }
 
     foreach (sk_acf_defaults() as $key => $val) {
-        update_option('options_'.$key, $val, false);
+        if ($full_reset || get_option('options_'.$key) === false || get_option('options_'.$key) === '') {
+            update_option('options_'.$key, $val, false);
+        }
     }
-    update_option('options_sk_philosophy_pillars_json', wp_json_encode(sk_default_pillars()), false);
-    update_option('options_sk_founders_json',           wp_json_encode(sk_default_founders()), false);
-    update_option('options_sk_values_json',             wp_json_encode(sk_default_values()),   false);
+    if ($full_reset || !get_option('options_sk_philosophy_pillars_json')) {
+        update_option('options_sk_philosophy_pillars_json', wp_json_encode(sk_default_pillars()), false);
+    }
+    if ($full_reset || !get_option('options_sk_founders_json')) {
+        update_option('options_sk_founders_json', wp_json_encode(sk_default_founders()), false);
+    }
+    if ($full_reset || !get_option('options_sk_values_json')) {
+        update_option('options_sk_values_json', wp_json_encode(sk_default_values()), false);
+    }
 
     require_once __DIR__ . '/inc/content.php';
     sk_insert_default_content();
 
     add_action('admin_notices', function() {
-        echo '<div class="notice notice-success is-dismissible"><p><strong>Sacred Kompass:</strong> Re-seeded successfully. <a href="'.admin_url().'">Dashboard →</a></p></div>';
+        echo '<div class="notice notice-success is-dismissible"><p><strong>Sacred Kompass:</strong> Re-seeded successfully'.(!empty($_GET['sk_full']) ? ' (full reset mode)' : ' (safe mode)').'. <a href="'.admin_url().'">Dashboard →</a></p></div>';
     });
 }
 
